@@ -9,6 +9,7 @@
 *workspace
 *.prof
 *.bak
+users.db
 # Test binary, built with go test -c
 *.test
 *.out

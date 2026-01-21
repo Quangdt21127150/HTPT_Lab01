@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "./user";
+
+message User {
+  string CreatedAt = 1;
+  string UUID      = 2;
+  string Email     = 3;
+  string Password  = 4;
+  string Image     = 5;
+  int32  ID        = 6;
+  bool   IsAdmin   = 7;
+}
+
+message GetRequest {
+  int32 id = 1;
+}
+
+message GetAllRequest {
+  int32 offset = 1;
+  int32 limit  = 2;
+}
+
+message GetAllResponse {
+  repeated User users  = 1;
+  int32         total  = 2;
+  int32         offset = 3;
+  int32         limit  = 4;
+}
+
+message CountRequest {}
+
+message CountResponse {
+  int32 count = 1;
+}
+
+message InsertRequest {
+  string user_json = 1;
+}
+
+message SetRequest {
+  string user_json = 1;
+}
+
+message DeleteRequest {
+  int32 id = 1;
+}
+
+message EmptyResponse {}
+
+service UserService {
+  rpc Get(GetRequest) returns (User);
+  rpc GetAll(GetAllRequest) returns (GetAllResponse);
+  rpc Count(CountRequest) returns (CountResponse);
+  rpc Insert(InsertRequest) returns (EmptyResponse);
+  rpc Set(SetRequest) returns (EmptyResponse);
+  rpc Delete(DeleteRequest) returns (EmptyResponse);
+}
