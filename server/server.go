@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -90,12 +91,16 @@ func loadFromBunt(db *fastdb.DB, path string) error {
 	return nil
 }
 
-func validateUser(u *pb.User) error {
+func validateUser(u *pb.UserDTO) error {
 	if u == nil {
 		return errors.New("User data required")
 	}
 	if u.Email == "" {
 		return errors.New("Email required")
+	}
+	var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(u.Email) {
+		return errors.New("Invalid Email format")
 	}
 	if u.Password == "" {
 		return errors.New("Password required")
@@ -110,7 +115,7 @@ func validateUser(u *pb.User) error {
 	return nil
 }
 
-func pbUserToUser(pbUser *pb.User, id int) *User {
+func pbUserToUser(pbUser *pb.UserDTO, id int) *User {
 	return &User{
 		CreatedAt: pbUser.CreatedAt,
 		UUID:      pbUser.UUID,
@@ -148,6 +153,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.User, error) 
 		Email:     u.Email,
 		Password:  u.Password,
 		Image:     u.Image,
+		ID:        int32(u.ID),
 		IsAdmin:   u.IsAdmin,
 	}, nil
 }
@@ -207,6 +213,7 @@ func (s *server) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.GetAllR
 			Email:     u.Email,
 			Password:  u.Password,
 			Image:     u.Image,
+			ID:        int32(u.ID),
 			IsAdmin:   u.IsAdmin,
 		})
 	}

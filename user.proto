@@ -10,6 +10,16 @@ message User {
   string Email     = 3;
   string Password  = 4;
   string Image     = 5;
+  int32  ID        = 6;
+  bool   IsAdmin   = 7;
+}
+
+message UserDTO {
+  string CreatedAt = 1;
+  string UUID      = 2;
+  string Email     = 3;
+  string Password  = 4;
+  string Image     = 5;
   bool   IsAdmin   = 6;
 }
 
@@ -33,7 +43,7 @@ message GetAllResponse {
 
 message SetRequest {
   int32 ID = 1;
-  User data = 2;
+  UserDTO data = 2;
 }
 
 message CountResponse {

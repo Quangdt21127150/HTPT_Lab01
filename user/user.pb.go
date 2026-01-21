@@ -28,7 +28,8 @@ type User struct {
 	Email         string                 `protobuf:"bytes,3,opt,name=Email,proto3" json:"Email,omitempty"`
 	Password      string                 `protobuf:"bytes,4,opt,name=Password,proto3" json:"Password,omitempty"`
 	Image         string                 `protobuf:"bytes,5,opt,name=Image,proto3" json:"Image,omitempty"`
-	IsAdmin       bool                   `protobuf:"varint,6,opt,name=IsAdmin,proto3" json:"IsAdmin,omitempty"`
+	ID            int32                  `protobuf:"varint,6,opt,name=ID,proto3" json:"ID,omitempty"`
+	IsAdmin       bool                   `protobuf:"varint,7,opt,name=IsAdmin,proto3" json:"IsAdmin,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -98,7 +99,98 @@ func (x *User) GetImage() string {
 	return ""
 }
 
+func (x *User) GetID() int32 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
 func (x *User) GetIsAdmin() bool {
+	if x != nil {
+		return x.IsAdmin
+	}
+	return false
+}
+
+type UserDTO struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CreatedAt     string                 `protobuf:"bytes,1,opt,name=CreatedAt,proto3" json:"CreatedAt,omitempty"`
+	UUID          string                 `protobuf:"bytes,2,opt,name=UUID,proto3" json:"UUID,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=Email,proto3" json:"Email,omitempty"`
+	Password      string                 `protobuf:"bytes,4,opt,name=Password,proto3" json:"Password,omitempty"`
+	Image         string                 `protobuf:"bytes,5,opt,name=Image,proto3" json:"Image,omitempty"`
+	IsAdmin       bool                   `protobuf:"varint,6,opt,name=IsAdmin,proto3" json:"IsAdmin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserDTO) Reset() {
+	*x = UserDTO{}
+	mi := &file_user_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserDTO) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserDTO) ProtoMessage() {}
+
+func (x *UserDTO) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserDTO.ProtoReflect.Descriptor instead.
+func (*UserDTO) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *UserDTO) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *UserDTO) GetUUID() string {
+	if x != nil {
+		return x.UUID
+	}
+	return ""
+}
+
+func (x *UserDTO) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *UserDTO) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *UserDTO) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *UserDTO) GetIsAdmin() bool {
 	if x != nil {
 		return x.IsAdmin
 	}
@@ -113,7 +205,7 @@ type EmptyRequest struct {
 
 func (x *EmptyRequest) Reset() {
 	*x = EmptyRequest{}
-	mi := &file_user_proto_msgTypes[1]
+	mi := &file_user_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -125,7 +217,7 @@ func (x *EmptyRequest) String() string {
 func (*EmptyRequest) ProtoMessage() {}
 
 func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[1]
+	mi := &file_user_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -138,7 +230,7 @@ func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyRequest.ProtoReflect.Descriptor instead.
 func (*EmptyRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{1}
+	return file_user_proto_rawDescGZIP(), []int{2}
 }
 
 type GetRequest struct {
@@ -150,7 +242,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_user_proto_msgTypes[2]
+	mi := &file_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -162,7 +254,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[2]
+	mi := &file_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -175,7 +267,7 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{2}
+	return file_user_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetRequest) GetID() int32 {
@@ -195,7 +287,7 @@ type GetAllRequest struct {
 
 func (x *GetAllRequest) Reset() {
 	*x = GetAllRequest{}
-	mi := &file_user_proto_msgTypes[3]
+	mi := &file_user_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -207,7 +299,7 @@ func (x *GetAllRequest) String() string {
 func (*GetAllRequest) ProtoMessage() {}
 
 func (x *GetAllRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[3]
+	mi := &file_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -220,7 +312,7 @@ func (x *GetAllRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllRequest.ProtoReflect.Descriptor instead.
 func (*GetAllRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{3}
+	return file_user_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetAllRequest) GetOffset() int32 {
@@ -249,7 +341,7 @@ type GetAllResponse struct {
 
 func (x *GetAllResponse) Reset() {
 	*x = GetAllResponse{}
-	mi := &file_user_proto_msgTypes[4]
+	mi := &file_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -261,7 +353,7 @@ func (x *GetAllResponse) String() string {
 func (*GetAllResponse) ProtoMessage() {}
 
 func (x *GetAllResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[4]
+	mi := &file_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -274,7 +366,7 @@ func (x *GetAllResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllResponse.ProtoReflect.Descriptor instead.
 func (*GetAllResponse) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{4}
+	return file_user_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAllResponse) GetUsers() []*User {
@@ -308,14 +400,14 @@ func (x *GetAllResponse) GetLimit() int32 {
 type SetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            int32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	Data          *User                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Data          *UserDTO               `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SetRequest) Reset() {
 	*x = SetRequest{}
-	mi := &file_user_proto_msgTypes[5]
+	mi := &file_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +419,7 @@ func (x *SetRequest) String() string {
 func (*SetRequest) ProtoMessage() {}
 
 func (x *SetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[5]
+	mi := &file_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +432,7 @@ func (x *SetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetRequest.ProtoReflect.Descriptor instead.
 func (*SetRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{5}
+	return file_user_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SetRequest) GetID() int32 {
@@ -350,7 +442,7 @@ func (x *SetRequest) GetID() int32 {
 	return 0
 }
 
-func (x *SetRequest) GetData() *User {
+func (x *SetRequest) GetData() *UserDTO {
 	if x != nil {
 		return x.Data
 	}
@@ -366,7 +458,7 @@ type CountResponse struct {
 
 func (x *CountResponse) Reset() {
 	*x = CountResponse{}
-	mi := &file_user_proto_msgTypes[6]
+	mi := &file_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -378,7 +470,7 @@ func (x *CountResponse) String() string {
 func (*CountResponse) ProtoMessage() {}
 
 func (x *CountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[6]
+	mi := &file_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +483,7 @@ func (x *CountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CountResponse.ProtoReflect.Descriptor instead.
 func (*CountResponse) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{6}
+	return file_user_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CountResponse) GetCount() int32 {
@@ -410,7 +502,7 @@ type DeleteRequest struct {
 
 func (x *DeleteRequest) Reset() {
 	*x = DeleteRequest{}
-	mi := &file_user_proto_msgTypes[7]
+	mi := &file_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -422,7 +514,7 @@ func (x *DeleteRequest) String() string {
 func (*DeleteRequest) ProtoMessage() {}
 
 func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[7]
+	mi := &file_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -435,7 +527,7 @@ func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{7}
+	return file_user_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DeleteRequest) GetID() int32 {
@@ -454,7 +546,7 @@ type SuccessResponse struct {
 
 func (x *SuccessResponse) Reset() {
 	*x = SuccessResponse{}
-	mi := &file_user_proto_msgTypes[8]
+	mi := &file_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -466,7 +558,7 @@ func (x *SuccessResponse) String() string {
 func (*SuccessResponse) ProtoMessage() {}
 
 func (x *SuccessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[8]
+	mi := &file_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,7 +571,7 @@ func (x *SuccessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuccessResponse.ProtoReflect.Descriptor instead.
 func (*SuccessResponse) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{8}
+	return file_user_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SuccessResponse) GetSuccess() bool {
@@ -494,8 +586,16 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\x04user\"\x9a\x01\n" +
+	"user.proto\x12\x04user\"\xaa\x01\n" +
 	"\x04User\x12\x1c\n" +
+	"\tCreatedAt\x18\x01 \x01(\tR\tCreatedAt\x12\x12\n" +
+	"\x04UUID\x18\x02 \x01(\tR\x04UUID\x12\x14\n" +
+	"\x05Email\x18\x03 \x01(\tR\x05Email\x12\x1a\n" +
+	"\bPassword\x18\x04 \x01(\tR\bPassword\x12\x14\n" +
+	"\x05Image\x18\x05 \x01(\tR\x05Image\x12\x0e\n" +
+	"\x02ID\x18\x06 \x01(\x05R\x02ID\x12\x18\n" +
+	"\aIsAdmin\x18\a \x01(\bR\aIsAdmin\"\x9d\x01\n" +
+	"\aUserDTO\x12\x1c\n" +
 	"\tCreatedAt\x18\x01 \x01(\tR\tCreatedAt\x12\x12\n" +
 	"\x04UUID\x18\x02 \x01(\tR\x04UUID\x12\x14\n" +
 	"\x05Email\x18\x03 \x01(\tR\x05Email\x12\x1a\n" +
@@ -514,12 +614,11 @@ const file_user_proto_rawDesc = "" +
 	".user.UserR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x16\n" +
 	"\x06offset\x18\x03 \x01(\x05R\x06offset\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\"<\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\"?\n" +
 	"\n" +
 	"SetRequest\x12\x0e\n" +
-	"\x02ID\x18\x01 \x01(\x05R\x02ID\x12\x1e\n" +
-	"\x04data\x18\x02 \x01(\v2\n" +
-	".user.UserR\x04data\"%\n" +
+	"\x02ID\x18\x01 \x01(\x05R\x02ID\x12!\n" +
+	"\x04data\x18\x02 \x01(\v2\r.user.UserDTOR\x04data\"%\n" +
 	"\rCountResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"\x1f\n" +
 	"\rDeleteRequest\x12\x0e\n" +
@@ -547,33 +646,34 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_user_proto_goTypes = []any{
 	(*User)(nil),            // 0: user.User
-	(*EmptyRequest)(nil),    // 1: user.EmptyRequest
-	(*GetRequest)(nil),      // 2: user.GetRequest
-	(*GetAllRequest)(nil),   // 3: user.GetAllRequest
-	(*GetAllResponse)(nil),  // 4: user.GetAllResponse
-	(*SetRequest)(nil),      // 5: user.SetRequest
-	(*CountResponse)(nil),   // 6: user.CountResponse
-	(*DeleteRequest)(nil),   // 7: user.DeleteRequest
-	(*SuccessResponse)(nil), // 8: user.SuccessResponse
+	(*UserDTO)(nil),         // 1: user.UserDTO
+	(*EmptyRequest)(nil),    // 2: user.EmptyRequest
+	(*GetRequest)(nil),      // 3: user.GetRequest
+	(*GetAllRequest)(nil),   // 4: user.GetAllRequest
+	(*GetAllResponse)(nil),  // 5: user.GetAllResponse
+	(*SetRequest)(nil),      // 6: user.SetRequest
+	(*CountResponse)(nil),   // 7: user.CountResponse
+	(*DeleteRequest)(nil),   // 8: user.DeleteRequest
+	(*SuccessResponse)(nil), // 9: user.SuccessResponse
 }
 var file_user_proto_depIdxs = []int32{
 	0, // 0: user.GetAllResponse.users:type_name -> user.User
-	0, // 1: user.SetRequest.data:type_name -> user.User
-	2, // 2: user.UserService.Get:input_type -> user.GetRequest
-	3, // 3: user.UserService.GetAll:input_type -> user.GetAllRequest
-	1, // 4: user.UserService.Count:input_type -> user.EmptyRequest
-	5, // 5: user.UserService.Insert:input_type -> user.SetRequest
-	5, // 6: user.UserService.Set:input_type -> user.SetRequest
-	7, // 7: user.UserService.Delete:input_type -> user.DeleteRequest
+	1, // 1: user.SetRequest.data:type_name -> user.UserDTO
+	3, // 2: user.UserService.Get:input_type -> user.GetRequest
+	4, // 3: user.UserService.GetAll:input_type -> user.GetAllRequest
+	2, // 4: user.UserService.Count:input_type -> user.EmptyRequest
+	6, // 5: user.UserService.Insert:input_type -> user.SetRequest
+	6, // 6: user.UserService.Set:input_type -> user.SetRequest
+	8, // 7: user.UserService.Delete:input_type -> user.DeleteRequest
 	0, // 8: user.UserService.Get:output_type -> user.User
-	4, // 9: user.UserService.GetAll:output_type -> user.GetAllResponse
-	6, // 10: user.UserService.Count:output_type -> user.CountResponse
-	8, // 11: user.UserService.Insert:output_type -> user.SuccessResponse
-	8, // 12: user.UserService.Set:output_type -> user.SuccessResponse
-	8, // 13: user.UserService.Delete:output_type -> user.SuccessResponse
+	5, // 9: user.UserService.GetAll:output_type -> user.GetAllResponse
+	7, // 10: user.UserService.Count:output_type -> user.CountResponse
+	9, // 11: user.UserService.Insert:output_type -> user.SuccessResponse
+	9, // 12: user.UserService.Set:output_type -> user.SuccessResponse
+	9, // 13: user.UserService.Delete:output_type -> user.SuccessResponse
 	8, // [8:14] is the sub-list for method output_type
 	2, // [2:8] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -592,7 +692,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

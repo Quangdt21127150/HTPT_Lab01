@@ -39,7 +39,7 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) GetUser(id int32) (*User, error) {
+func (c *Client) Get(id int32) (*User, error) {
 	resp, err := c.client.Get(context.Background(), &pb.GetRequest{ID: id})
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (c *Client) GetUser(id int32) (*User, error) {
 	}, nil
 }
 
-func (c *Client) GetAllUsers() ([]*User, error) {
+func (c *Client) GetAll() ([]*User, error) {
 	resp, err := c.client.GetAll(context.Background(), &pb.GetAllRequest{})
 	if err != nil {
 		return nil, err
@@ -68,13 +68,14 @@ func (c *Client) GetAllUsers() ([]*User, error) {
 			Email:     pbUser.Email,
 			Password:  pbUser.Password,
 			Image:     pbUser.Image,
+			ID:        int(pbUser.ID),
 			IsAdmin:   pbUser.IsAdmin,
 		})
 	}
 	return users, nil
 }
 
-func (c *Client) CountUsers() (int32, error) {
+func (c *Client) Count() (int32, error) {
 	resp, err := c.client.Count(context.Background(), &pb.EmptyRequest{})
 	if err != nil {
 		return 0, err
@@ -82,10 +83,10 @@ func (c *Client) CountUsers() (int32, error) {
 	return resp.Count, nil
 }
 
-func (c *Client) InsertUser(user *User) (bool, error) {
+func (c *Client) Insert(user *User) (bool, error) {
 	resp, err := c.client.Insert(context.Background(), &pb.SetRequest{
 		ID: int32(user.ID),
-		Data: &pb.User{
+		Data: &pb.UserDTO{
 			CreatedAt: user.CreatedAt,
 			UUID:      user.UUID,
 			Email:     user.Email,
@@ -100,10 +101,10 @@ func (c *Client) InsertUser(user *User) (bool, error) {
 	return resp.Success, nil
 }
 
-func (c *Client) UpdateUser(user *User) (bool, error) {
+func (c *Client) Set(user *User) (bool, error) {
 	resp, err := c.client.Set(context.Background(), &pb.SetRequest{
 		ID: int32(user.ID),
-		Data: &pb.User{
+		Data: &pb.UserDTO{
 			CreatedAt: user.CreatedAt,
 			UUID:      user.UUID,
 			Email:     user.Email,
@@ -118,7 +119,7 @@ func (c *Client) UpdateUser(user *User) (bool, error) {
 	return resp.Success, nil
 }
 
-func (c *Client) DeleteUser(id int32) (bool, error) {
+func (c *Client) Delete(id int32) (bool, error) {
 	resp, err := c.client.Delete(context.Background(), &pb.DeleteRequest{ID: id})
 	if err != nil {
 		return false, err
