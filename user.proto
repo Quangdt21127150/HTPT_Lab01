@@ -25,7 +25,7 @@ message UserDTO {
 
 message EmptyRequest {}
 
-message GetRequest {
+message IDRequest {
   int32 ID = 1;
 }
 
@@ -50,19 +50,15 @@ message CountResponse {
   int32 count = 1;
 }
 
-message DeleteRequest {
-  int32 ID = 1;
-}
-
 message SuccessResponse {
   bool success = 1;
 }
 
 service UserService {
-  rpc Get(GetRequest) returns (User);
+  rpc Get(IDRequest) returns (User);
   rpc GetAll(GetAllRequest) returns (GetAllResponse);
   rpc Count(EmptyRequest) returns (CountResponse);
   rpc Insert(SetRequest) returns (SuccessResponse);
   rpc Set(SetRequest) returns (SuccessResponse);
-  rpc Delete(DeleteRequest) returns (SuccessResponse);
+  rpc Delete(IDRequest) returns (SuccessResponse);
 }

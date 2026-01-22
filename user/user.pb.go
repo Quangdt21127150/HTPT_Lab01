@@ -233,27 +233,27 @@ func (*EmptyRequest) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{2}
 }
 
-type GetRequest struct {
+type IDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            int32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetRequest) Reset() {
-	*x = GetRequest{}
+func (x *IDRequest) Reset() {
+	*x = IDRequest{}
 	mi := &file_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetRequest) String() string {
+func (x *IDRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetRequest) ProtoMessage() {}
+func (*IDRequest) ProtoMessage() {}
 
-func (x *GetRequest) ProtoReflect() protoreflect.Message {
+func (x *IDRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -265,12 +265,12 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
-func (*GetRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use IDRequest.ProtoReflect.Descriptor instead.
+func (*IDRequest) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetRequest) GetID() int32 {
+func (x *IDRequest) GetID() int32 {
 	if x != nil {
 		return x.ID
 	}
@@ -493,50 +493,6 @@ func (x *CountResponse) GetCount() int32 {
 	return 0
 }
 
-type DeleteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ID            int32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteRequest) Reset() {
-	*x = DeleteRequest{}
-	mi := &file_user_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteRequest) ProtoMessage() {}
-
-func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
-func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *DeleteRequest) GetID() int32 {
-	if x != nil {
-		return x.ID
-	}
-	return 0
-}
-
 type SuccessResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
@@ -546,7 +502,7 @@ type SuccessResponse struct {
 
 func (x *SuccessResponse) Reset() {
 	*x = SuccessResponse{}
-	mi := &file_user_proto_msgTypes[9]
+	mi := &file_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -558,7 +514,7 @@ func (x *SuccessResponse) String() string {
 func (*SuccessResponse) ProtoMessage() {}
 
 func (x *SuccessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[9]
+	mi := &file_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -571,7 +527,7 @@ func (x *SuccessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuccessResponse.ProtoReflect.Descriptor instead.
 func (*SuccessResponse) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{9}
+	return file_user_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SuccessResponse) GetSuccess() bool {
@@ -602,9 +558,8 @@ const file_user_proto_rawDesc = "" +
 	"\bPassword\x18\x04 \x01(\tR\bPassword\x12\x14\n" +
 	"\x05Image\x18\x05 \x01(\tR\x05Image\x12\x18\n" +
 	"\aIsAdmin\x18\x06 \x01(\bR\aIsAdmin\"\x0e\n" +
-	"\fEmptyRequest\"\x1c\n" +
-	"\n" +
-	"GetRequest\x12\x0e\n" +
+	"\fEmptyRequest\"\x1b\n" +
+	"\tIDRequest\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\x05R\x02ID\"=\n" +
 	"\rGetAllRequest\x12\x16\n" +
 	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x14\n" +
@@ -620,19 +575,17 @@ const file_user_proto_rawDesc = "" +
 	"\x02ID\x18\x01 \x01(\x05R\x02ID\x12!\n" +
 	"\x04data\x18\x02 \x01(\v2\r.user.UserDTOR\x04data\"%\n" +
 	"\rCountResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count\"\x1f\n" +
-	"\rDeleteRequest\x12\x0e\n" +
-	"\x02ID\x18\x01 \x01(\x05R\x02ID\"+\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"+\n" +
 	"\x0fSuccessResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xb2\x02\n" +
-	"\vUserService\x12#\n" +
-	"\x03Get\x12\x10.user.GetRequest\x1a\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xad\x02\n" +
+	"\vUserService\x12\"\n" +
+	"\x03Get\x12\x0f.user.IDRequest\x1a\n" +
 	".user.User\x123\n" +
 	"\x06GetAll\x12\x13.user.GetAllRequest\x1a\x14.user.GetAllResponse\x120\n" +
 	"\x05Count\x12\x12.user.EmptyRequest\x1a\x13.user.CountResponse\x121\n" +
 	"\x06Insert\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x12.\n" +
-	"\x03Set\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x124\n" +
-	"\x06Delete\x12\x13.user.DeleteRequest\x1a\x15.user.SuccessResponseB\bZ\x06./userb\x06proto3"
+	"\x03Set\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x120\n" +
+	"\x06Delete\x12\x0f.user.IDRequest\x1a\x15.user.SuccessResponseB\bZ\x06./userb\x06proto3"
 
 var (
 	file_user_proto_rawDescOnce sync.Once
@@ -646,34 +599,33 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_user_proto_goTypes = []any{
 	(*User)(nil),            // 0: user.User
 	(*UserDTO)(nil),         // 1: user.UserDTO
 	(*EmptyRequest)(nil),    // 2: user.EmptyRequest
-	(*GetRequest)(nil),      // 3: user.GetRequest
+	(*IDRequest)(nil),       // 3: user.IDRequest
 	(*GetAllRequest)(nil),   // 4: user.GetAllRequest
 	(*GetAllResponse)(nil),  // 5: user.GetAllResponse
 	(*SetRequest)(nil),      // 6: user.SetRequest
 	(*CountResponse)(nil),   // 7: user.CountResponse
-	(*DeleteRequest)(nil),   // 8: user.DeleteRequest
-	(*SuccessResponse)(nil), // 9: user.SuccessResponse
+	(*SuccessResponse)(nil), // 8: user.SuccessResponse
 }
 var file_user_proto_depIdxs = []int32{
 	0, // 0: user.GetAllResponse.users:type_name -> user.User
 	1, // 1: user.SetRequest.data:type_name -> user.UserDTO
-	3, // 2: user.UserService.Get:input_type -> user.GetRequest
+	3, // 2: user.UserService.Get:input_type -> user.IDRequest
 	4, // 3: user.UserService.GetAll:input_type -> user.GetAllRequest
 	2, // 4: user.UserService.Count:input_type -> user.EmptyRequest
 	6, // 5: user.UserService.Insert:input_type -> user.SetRequest
 	6, // 6: user.UserService.Set:input_type -> user.SetRequest
-	8, // 7: user.UserService.Delete:input_type -> user.DeleteRequest
+	3, // 7: user.UserService.Delete:input_type -> user.IDRequest
 	0, // 8: user.UserService.Get:output_type -> user.User
 	5, // 9: user.UserService.GetAll:output_type -> user.GetAllResponse
 	7, // 10: user.UserService.Count:output_type -> user.CountResponse
-	9, // 11: user.UserService.Insert:output_type -> user.SuccessResponse
-	9, // 12: user.UserService.Set:output_type -> user.SuccessResponse
-	9, // 13: user.UserService.Delete:output_type -> user.SuccessResponse
+	8, // 11: user.UserService.Insert:output_type -> user.SuccessResponse
+	8, // 12: user.UserService.Set:output_type -> user.SuccessResponse
+	8, // 13: user.UserService.Delete:output_type -> user.SuccessResponse
 	8, // [8:14] is the sub-list for method output_type
 	2, // [2:8] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -692,7 +644,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

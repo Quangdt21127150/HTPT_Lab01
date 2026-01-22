@@ -138,7 +138,7 @@ func NewServer() *server {
 	return &server{db: db}
 }
 
-func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.User, error) {
+func (s *server) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, error) {
 	data, ok := s.db.Get(bucket, int(req.ID))
 	if !ok {
 		return nil, status.Error(codes.NotFound, "User not found")
@@ -297,7 +297,7 @@ func (s *server) Set(ctx context.Context, req *pb.SetRequest) (*pb.SuccessRespon
 	return &pb.SuccessResponse{Success: true}, nil
 }
 
-func (s *server) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.SuccessResponse, error) {
+func (s *server) Delete(ctx context.Context, req *pb.IDRequest) (*pb.SuccessResponse, error) {
 	ok, err := s.db.Del(bucket, int(req.ID))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -315,7 +315,7 @@ func main() {
 	}
 	grpcServer := grpc.NewServer()
 	pb.RegisterUserServiceServer(grpcServer, NewServer())
-	log.Println("Server running on :3000")
+	log.Println("Server is running on localhost:3000")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}

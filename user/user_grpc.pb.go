@@ -31,12 +31,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*User, error)
+	Get(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*User, error)
 	GetAll(ctx context.Context, in *GetAllRequest, opts ...grpc.CallOption) (*GetAllResponse, error)
 	Count(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*CountResponse, error)
 	Insert(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
-	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	Delete(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -47,7 +47,7 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *userServiceClient) Get(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*User, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(User)
 	err := c.cc.Invoke(ctx, UserService_Get_FullMethodName, in, out, cOpts...)
@@ -97,7 +97,7 @@ func (c *userServiceClient) Set(ctx context.Context, in *SetRequest, opts ...grp
 	return out, nil
 }
 
-func (c *userServiceClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+func (c *userServiceClient) Delete(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Delete_FullMethodName, in, out, cOpts...)
@@ -111,12 +111,12 @@ func (c *userServiceClient) Delete(ctx context.Context, in *DeleteRequest, opts 
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 type UserServiceServer interface {
-	Get(context.Context, *GetRequest) (*User, error)
+	Get(context.Context, *IDRequest) (*User, error)
 	GetAll(context.Context, *GetAllRequest) (*GetAllResponse, error)
 	Count(context.Context, *EmptyRequest) (*CountResponse, error)
 	Insert(context.Context, *SetRequest) (*SuccessResponse, error)
 	Set(context.Context, *SetRequest) (*SuccessResponse, error)
-	Delete(context.Context, *DeleteRequest) (*SuccessResponse, error)
+	Delete(context.Context, *IDRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -127,7 +127,7 @@ type UserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserServiceServer struct{}
 
-func (UnimplementedUserServiceServer) Get(context.Context, *GetRequest) (*User, error) {
+func (UnimplementedUserServiceServer) Get(context.Context, *IDRequest) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
 }
 func (UnimplementedUserServiceServer) GetAll(context.Context, *GetAllRequest) (*GetAllResponse, error) {
@@ -142,7 +142,7 @@ func (UnimplementedUserServiceServer) Insert(context.Context, *SetRequest) (*Suc
 func (UnimplementedUserServiceServer) Set(context.Context, *SetRequest) (*SuccessResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Set not implemented")
 }
-func (UnimplementedUserServiceServer) Delete(context.Context, *DeleteRequest) (*SuccessResponse, error) {
+func (UnimplementedUserServiceServer) Delete(context.Context, *IDRequest) (*SuccessResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
@@ -167,7 +167,7 @@ func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 }
 
 func _UserService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRequest)
+	in := new(IDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func _UserService_Get_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: UserService_Get_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).Get(ctx, req.(*GetRequest))
+		return srv.(UserServiceServer).Get(ctx, req.(*IDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -257,7 +257,7 @@ func _UserService_Set_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRequest)
+	in := new(IDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: UserService_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).Delete(ctx, req.(*DeleteRequest))
+		return srv.(UserServiceServer).Delete(ctx, req.(*IDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -40,7 +40,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Get(id int32) (*User, error) {
-	resp, err := c.client.Get(context.Background(), &pb.GetRequest{ID: id})
+	resp, err := c.client.Get(context.Background(), &pb.IDRequest{ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (c *Client) Set(user *User) (bool, error) {
 }
 
 func (c *Client) Delete(id int32) (bool, error) {
-	resp, err := c.client.Delete(context.Background(), &pb.DeleteRequest{ID: id})
+	resp, err := c.client.Delete(context.Background(), &pb.IDRequest{ID: id})
 	if err != nil {
 		return false, err
 	}
