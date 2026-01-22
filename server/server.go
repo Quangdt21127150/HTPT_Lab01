@@ -28,7 +28,7 @@ type server struct {
 }
 
 const (
-	bucket   = "users"
+	bucket   = "user"
 	dbPath   = "users.db"
 	buntPath = "buntData.db"
 	syncTime = 100
@@ -69,12 +69,13 @@ func loadFromBunt(db *fastdb.DB, path string) error {
 			value := strings.TrimSpace(lines[i])
 			i += 1
 
-			if strings.HasPrefix(key, "user_") {
-				idStr := strings.TrimPrefix(key, "user_")
+			if after, ok := strings.CutPrefix(key, "user_"); ok {
+				idStr := after
 				id, err := strconv.Atoi(idStr)
 				if err != nil {
 					continue
 				}
+
 				var u User
 				if err := json.Unmarshal([]byte(value), &u); err != nil {
 					continue
@@ -127,18 +128,27 @@ func pbUserToUser(pbUser *pb.UserDTO, id int) *User {
 	}
 }
 
-func NewServer() *server {
+func LoadData() *server {
 	db, err := fastdb.Open(dbPath, syncTime)
 	if err != nil {
 		log.Fatalf("Failed to open db: %v", err)
 	}
-	if err := loadFromBunt(db, buntPath); err != nil {
-		log.Printf("Warning: Failed to load from buntData.db: %v", err)
+
+	all, err := db.GetAll(bucket)
+	if len(all) == 0 {
+		if err := loadFromBunt(db, buntPath); err != nil {
+			log.Printf("Warning: Failed to load from buntData.db: %v", err)
+		}
 	}
+
 	return &server{db: db}
 }
 
 func (s *server) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, error) {
+	if req.ID <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "ID must be positive")
+	}
+
 	data, ok := s.db.Get(bucket, int(req.ID))
 	if !ok {
 		return nil, status.Error(codes.NotFound, "User not found")
@@ -176,15 +186,12 @@ func (s *server) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.GetAllR
 
 	total := len(ids)
 
-	offset := max(int(req.Offset), 0)
+	offset := int(req.Offset)
 
+	if req.Limit < 0 || req.Limit > 50000 {
+		return nil, status.Error(codes.InvalidArgument, "Limit must be in range [0, 50000]")
+	}
 	limit := int(req.Limit)
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 500 {
-		limit = 500
-	}
 
 	if offset >= total {
 		return &pb.GetAllResponse{
@@ -314,7 +321,7 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterUserServiceServer(grpcServer, NewServer())
+	pb.RegisterUserServiceServer(grpcServer, LoadData())
 	log.Println("Server is running on localhost:3000")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)

@@ -137,7 +137,12 @@ func (aof *AOF) fileReader() (map[string]map[int][]byte, error) {
 			key = scanner.Text()
 			count++
 
-			delete(keys, key)
+			bucket, nrID, isGood := setBucketAndKey(key, "", keys)
+			if isGood {
+				delete(keys[bucket], nrID)
+			} else {
+				return nil, fmt.Errorf("file (%s) has wrong key format on line: %d", aof.file.Name(), count)
+			}
 		default:
 			if !isSet {
 				return nil, fmt.Errorf("file (%s) has wrong instruction format on line: %d", aof.file.Name(), count)
