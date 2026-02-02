@@ -78,23 +78,25 @@ func loadConfig() ServerConfig {
 func main() {
 	config := loadConfig()
 
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 3000+config.myID))
+	if err != nil {
+		log.Fatalf("%s [Server %d] Failed to listen: %v", time.Now().Format("2006-01-02 15:04:05"), config.myID, err)
+	}
+
 	srv := NewUserServer(&config)
 
 	role := "Backup"
 	if srv.checkIsLeader() {
-		role = "Primary"
+		role = "Leader"
 	}
+
 	log.Printf("%s [Server %d] [%s] Running on localhost:%d", time.Now().Format("2006-01-02 15:04:05"), config.myID, role, 3000+config.myID)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 3000+config.myID))
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
 	grpcServer := grpc.NewServer()
 	pb.RegisterUserServiceServer(grpcServer, srv)
 	pb.RegisterElectionServiceServer(grpcServer, srv)
 
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+		log.Fatalf("%s [Server %d] [%s] Failed to serve: %v", time.Now().Format("2006-01-02 15:04:05"), config.myID, role, err)
 	}
 }

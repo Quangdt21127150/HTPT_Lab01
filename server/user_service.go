@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -50,19 +52,122 @@ type UserServer struct {
 	electionTriggeredMu sync.Mutex
 }
 
-func NewUserServer(config *ServerConfig) *UserServer {
-	all, _ := config.db.GetAll(bucket)
-	if len(all) == 0 {
-		_ = loadFromBunt(config.db, buntPath)
+func loadLastLeader() int {
+	path := filepath.Join("data", "leader.marker")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("Failed to find last leader: %v", err)
+		return 0
 	}
+	idStr := strings.TrimSpace(string(data))
+	if idStr == "" {
+		log.Printf("Failed to find last leader: %v", err)
+		return 0
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		log.Printf("Failed to find last leader: %v", err)
+		return 0
+	}
+	return id
+}
 
-	return &UserServer{
+func (s *UserServer) saveLeaderToMarker(leaderID int) error {
+	path := filepath.Join("data", "leader.marker")
+	content := fmt.Sprintf("%d", leaderID)
+	return os.WriteFile(path, []byte(content), 0644)
+}
+
+func NewUserServer(config *ServerConfig) *UserServer {
+	srv := &UserServer{
 		config:            config,
 		processedRequests: make(map[string]bool),
-		currentLeader:     config.peers[0],
-		isLeader:          config.myID == config.peers[0],
+		currentLeader:     -1,
+		isLeader:          false,
 		electionTriggered: false,
 	}
+
+	all, _ := config.db.GetAll(bucket)
+	dbIsEmpty := len(all) == 0
+
+	path := filepath.Join("data", "leader.marker")
+	_, err := os.ReadFile(path)
+
+	if err != nil {
+		srv.saveLeaderToMarker(config.myID)
+	}
+
+	lastLeader := loadLastLeader()
+
+	srv.mu.Lock()
+	srv.currentLeader = lastLeader
+	srv.isLeader = (lastLeader == config.myID)
+	srv.mu.Unlock()
+
+	if srv.isLeader && dbIsEmpty {
+		if err := loadFromBunt(config.db, buntPath); err == nil {
+			log.Printf("%s [Server %d] [Leader] Initialized database", time.Now().Format("2006-01-02 15:04:05"), config.myID)
+		} else {
+			log.Printf("%s [Server %d] [Leader] Initialize database failed: %v", time.Now().Format("2006-01-02 15:04:05"), config.myID, err)
+		}
+	} else if !srv.isLeader {
+		if err := srv.copyDataFromLeader(); err == nil {
+			log.Printf("%s [Server %d] [Backup] Successfully copied data from Leader %d", time.Now().Format("2006-01-02 15:04:05"), config.myID, lastLeader)
+		} else {
+			log.Printf("%s [Server %d] [Backup] Failed to copy from leader, starting empty: %v", time.Now().Format("2006-01-02 15:04:05"), config.myID, err)
+		}
+	}
+
+	return srv
+}
+
+func (s *UserServer) copyDataFromLeader() error {
+	if s.currentLeader <= 0 {
+		return nil
+	}
+
+	myDBPath := fmt.Sprintf("data/users%d.db", s.config.myID)
+
+	// Close DB of backup
+	if err := s.config.db.Close(); err != nil {
+		log.Printf("%s [Server %d] [Backup] Failed to close db before delete: %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, err)
+		return err
+	}
+
+	// Remove DB of backup
+	if err := os.Remove(myDBPath); err != nil && !os.IsNotExist(err) {
+		log.Printf("%s [Server %d] [Backup] Failed to remove old db file: %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, err)
+		return err
+	}
+
+	// Reopen DB for backup
+	newDB, err := fastdb.Open(myDBPath, syncTime)
+	if err != nil {
+		log.Printf("%s [Server %d] [Backup] Failed to reopen db after delete: %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, err)
+		return err
+	}
+	s.config.db = newDB
+
+	// Copy DB from leader
+	leaderDBPath := fmt.Sprintf("data/users%d.db", s.currentLeader)
+	srcDB, err := fastdb.Open(leaderDBPath, syncTime)
+	if err != nil {
+		return err
+	}
+	defer srcDB.Close()
+
+	all, err := srcDB.GetAll(bucket)
+	if err != nil {
+		return err
+	}
+
+	for id, data := range all {
+		if err := s.config.db.Set(bucket, id, data); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func validateUser(u *pb.UserDTO) error {
@@ -154,7 +259,7 @@ func (s *UserServer) setLeader(leaderID int) {
 	defer s.mu.Unlock()
 	s.currentLeader = leaderID
 	s.isLeader = (leaderID == s.config.myID)
-	log.Printf("%s [Server %d] Server %d became Primary", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, leaderID)
+	log.Printf("%s [Server %d] Server %d became Leader", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, leaderID)
 
 	s.electionTriggeredMu.Lock()
 	s.electionTriggered = false
@@ -236,7 +341,7 @@ func (s *UserServer) localDelete(req *pb.IDRequest) (*pb.SuccessResponse, error)
 	id := int(req.ID)
 	_, exists := s.config.db.Get(bucket, id)
 	if !exists {
-		return &pb.SuccessResponse{Success: true}, nil
+		return nil, status.Error(codes.NotFound, "User not found")
 	}
 
 	_, err := s.config.db.Del(bucket, id)
@@ -247,35 +352,19 @@ func (s *UserServer) localDelete(req *pb.IDRequest) (*pb.SuccessResponse, error)
 }
 
 func (s *UserServer) handleInsert(req *pb.SetRequest, isFromClient bool) (*pb.SuccessResponse, error) {
+	if isFromClient && !s.checkIsLeader() {
+		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
+	}
+
 	now := time.Now().Format("2006-01-02 15:04:05")
 	role := "Backup"
+	source := "Leader (replication)"
 	if s.checkIsLeader() {
-		role = "Primary"
+		role = "Leader"
+		source = "Client"
 	}
 
-	source := "Client"
-	if !isFromClient {
-		source = "Primary (replication)"
-	}
 	log.Printf("%s [Server %d] [%s] Received Insert request from %s", now, s.config.myID, role, source)
-
-	if isFromClient {
-		if !s.checkIsLeader() {
-			s.electionTriggeredMu.Lock()
-			if !s.electionTriggered {
-				s.electionTriggered = true
-				go s.initiateElection()
-				log.Printf("%s [Server %d] [Backup] Not leader, triggering election due to client write request", now, s.config.myID)
-			}
-			s.electionTriggeredMu.Unlock()
-
-			return nil, status.Error(codes.Unavailable, "Cannot connect this server")
-		}
-	} else {
-		if s.checkIsLeader() {
-			return nil, status.Error(codes.PermissionDenied, "Leader does not accept replication")
-		}
-	}
 
 	if req.RequestId == "" {
 		req.RequestId = uuid.New().String()
@@ -298,35 +387,19 @@ func (s *UserServer) handleInsert(req *pb.SetRequest, isFromClient bool) (*pb.Su
 }
 
 func (s *UserServer) handleSet(req *pb.SetRequest, isFromClient bool) (*pb.SuccessResponse, error) {
+	if isFromClient && !s.checkIsLeader() {
+		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
+	}
+
 	now := time.Now().Format("2006-01-02 15:04:05")
 	role := "Backup"
+	source := "Leader (replication)"
 	if s.checkIsLeader() {
-		role = "Primary"
+		role = "Leader"
+		source = "Client"
 	}
 
-	source := "Client"
-	if !isFromClient {
-		source = "Primary (replication)"
-	}
 	log.Printf("%s [Server %d] [%s] Received Set request from %s", now, s.config.myID, role, source)
-
-	if isFromClient {
-		if !s.checkIsLeader() {
-			s.electionTriggeredMu.Lock()
-			if !s.electionTriggered {
-				s.electionTriggered = true
-				go s.initiateElection()
-				log.Printf("%s [Server %d] [Backup] Not leader, triggering election due to client write request", now, s.config.myID)
-			}
-			s.electionTriggeredMu.Unlock()
-
-			return nil, status.Error(codes.Unavailable, "Cannot connect this server")
-		}
-	} else {
-		if s.checkIsLeader() {
-			return nil, status.Error(codes.PermissionDenied, "Leader does not accept replication")
-		}
-	}
 
 	if req.RequestId == "" {
 		req.RequestId = uuid.New().String()
@@ -349,35 +422,19 @@ func (s *UserServer) handleSet(req *pb.SetRequest, isFromClient bool) (*pb.Succe
 }
 
 func (s *UserServer) handleDelete(req *pb.IDRequest, isFromClient bool) (*pb.SuccessResponse, error) {
+	if isFromClient && !s.checkIsLeader() {
+		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
+	}
+
 	now := time.Now().Format("2006-01-02 15:04:05")
 	role := "Backup"
+	source := "Leader (replication)"
 	if s.checkIsLeader() {
-		role = "Primary"
+		role = "Leader"
+		source = "Client"
 	}
 
-	source := "Client"
-	if !isFromClient {
-		source = "Primary (replication)"
-	}
 	log.Printf("%s [Server %d] [%s] Received Delete request from %s", now, s.config.myID, role, source)
-
-	if isFromClient {
-		if !s.checkIsLeader() {
-			s.electionTriggeredMu.Lock()
-			if !s.electionTriggered {
-				s.electionTriggered = true
-				go s.initiateElection()
-				log.Printf("%s [Server %d] [Backup] Not leader, triggering election due to client write request", now, s.config.myID)
-			}
-			s.electionTriggeredMu.Unlock()
-
-			return nil, status.Error(codes.Unavailable, "Cannot connect this server")
-		}
-	} else {
-		if s.checkIsLeader() {
-			return nil, status.Error(codes.PermissionDenied, "Leader does not accept replication")
-		}
-	}
 
 	if req.RequestID == "" {
 		req.RequestID = uuid.New().String()
@@ -424,11 +481,11 @@ func (s *UserServer) ReplicateDelete(ctx context.Context, req *pb.IDRequest) (*p
 }
 
 func (s *UserServer) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, error) {
-	role := "Backup"
-	if s.checkIsLeader() {
-		role = "Primary"
+	if !s.checkIsLeader() {
+		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
 	}
-	log.Printf("%s [Server %d] [%s] Received Get request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, role)
+
+	log.Printf("%s [Server %d] [Leader] Received Get request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
 
 	data, ok := s.config.db.Get(bucket, int(req.ID))
 	if !ok {
@@ -452,11 +509,11 @@ func (s *UserServer) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, erro
 }
 
 func (s *UserServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.GetAllResponse, error) {
-	role := "Backup"
-	if s.checkIsLeader() {
-		role = "Primary"
+	if !s.checkIsLeader() {
+		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
 	}
-	log.Printf("%s [Server %d] [%s] Received GetAll request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, role)
+
+	log.Printf("%s [Server %d] [Leader] Received GetAll request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
 
 	allData, err := s.config.db.GetAll(bucket)
 	if err != nil {
@@ -480,7 +537,7 @@ func (s *UserServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.Get
 	if req.Limit < 0 || req.Limit > 50000 {
 		return nil, status.Error(codes.InvalidArgument, "Limit must be in range [0, 50000]")
 	}
-	limit := max(int(req.Limit), 50)
+	limit := int(req.Limit)
 
 	if offset >= total {
 		return &pb.GetAllResponse{
@@ -523,11 +580,11 @@ func (s *UserServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.Get
 }
 
 func (s *UserServer) Count(ctx context.Context, req *pb.EmptyRequest) (*pb.CountResponse, error) {
-	role := "Backup"
-	if s.checkIsLeader() {
-		role = "Primary"
+	if !s.checkIsLeader() {
+		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
 	}
-	log.Printf("%s [Server %d] [%s] Received Count request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, role)
+
+	log.Printf("%s [Server %d] [Leader] Received Count request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
 
 	all, err := s.config.db.GetAll(bucket)
 	if err != nil {

@@ -25,7 +25,7 @@ func (s *UserServer) replicate(req any, operation string) error {
 			addr := s.config.addressMap[peerID]
 			conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				log.Printf("%s [Server %d] [Primary] Replication %s to server %d failed: connect error %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, operation, peerID, err)
+				log.Printf("%s [Server %d] [Leader] Replication %s to server %d failed: connect error %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, operation, peerID, err)
 				errChan <- err
 				return
 			}
@@ -45,10 +45,10 @@ func (s *UserServer) replicate(req any, operation string) error {
 
 			conn.Close()
 			if rpcErr != nil {
-				log.Printf("%s [Server %d] [Primary] Received response from server %d for %s: FAILED (%v)", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, peerID, operation, rpcErr)
+				log.Printf("%s [Server %d] [Leader] Received response from server %d for %s: FAILED (%v)", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, peerID, operation, rpcErr)
 				errChan <- rpcErr
 			} else {
-				log.Printf("%s [Server %d] [Primary] Received response from server %d for %s: SUCCESS", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, peerID, operation)
+				log.Printf("%s [Server %d] [Leader] Received response from server %d for %s: SUCCESS", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, peerID, operation)
 			}
 		}(pid)
 	}
@@ -60,14 +60,13 @@ func (s *UserServer) replicate(req any, operation string) error {
 			return err
 		}
 	}
-	log.Printf("%s [Server %d] [Primary] All backups responded for %s", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, operation)
+	log.Printf("%s [Server %d] [Leader] All backups responded for %s", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, operation)
 	return nil
 }
 
 func (s *UserServer) GetLeader(ctx context.Context, req *pb.EmptyRequest) (*pb.ServerID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	log.Printf("%s [Server %d] Received GetLeader request, current leader ID=%d", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, s.currentLeader)
 	return &pb.ServerID{ID: int32(s.currentLeader)}, nil
 }
 
@@ -107,7 +106,7 @@ func (s *UserServer) SendElection(ctx context.Context, req *pb.ServerID) (*pb.Em
 	s.mu.Unlock()
 
 	if candidateID == myID {
-		log.Printf("%s [Server %d] Ring election completed, I am the new Primary (ID=%d)", time.Now().Format("2006-01-02 15:04:05"), myID, myID)
+		log.Printf("%s [Server %d] Ring election completed, I am the new Leader (ID=%d)", time.Now().Format("2006-01-02 15:04:05"), myID, myID)
 		s.setLeader(myID)
 		s.broadcastCoordinator()
 		return &pb.EmptyRequest{}, nil
@@ -136,7 +135,7 @@ func (s *UserServer) broadcastCoordinator() {
 		addr := s.config.addressMap[pid]
 		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Printf("%s [Server %d] [Primary] Cannot broadcast Coordinator to %d: %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, pid, err)
+			log.Printf("%s [Server %d] [Leader] Cannot broadcast Coordinator to %d: %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, pid, err)
 			continue
 		}
 		client := pb.NewElectionServiceClient(conn)
