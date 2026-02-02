@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
+	"github.com/google/uuid"
 	pb "github.com/marcelloh/fastdb/user"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type User struct {
@@ -22,15 +26,19 @@ type User struct {
 	IsAdmin   bool   `json:"IsAdmin"`
 }
 
-type ListOptions struct {
-	Offset int32 `json:"offset,omitempty"`
-	Limit  int32 `json:"limit,omitempty"`
+type Client struct {
+	conn       *grpc.ClientConn
+	client     pb.UserServiceClient
+	election   pb.ElectionServiceClient
+	leaderAddr string
 }
 
-type Client struct {
-	conn   *grpc.ClientConn
-	client pb.UserServiceClient
-}
+const (
+	maxRetries = 5
+	baseDelay  = 300 * time.Millisecond
+)
+
+var peersList = []string{"localhost:3001", "localhost:3002", "localhost:3003"}
 
 func NewClient(addr string) (*Client, error) {
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -38,13 +46,77 @@ func NewClient(addr string) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		conn:   conn,
-		client: pb.NewUserServiceClient(conn),
+		conn:       conn,
+		client:     pb.NewUserServiceClient(conn),
+		election:   pb.NewElectionServiceClient(conn),
+		leaderAddr: addr,
 	}, nil
 }
 
 func (c *Client) Close() error {
 	return c.conn.Close()
+}
+
+func (c *Client) SwitchLeader(newAddr string) error {
+	c.conn.Close()
+	conn, err := grpc.NewClient(newAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	c.conn = conn
+	c.client = pb.NewUserServiceClient(conn)
+	c.election = pb.NewElectionServiceClient(conn)
+	c.leaderAddr = newAddr
+	log.Printf("Switched to new leader: %s", newAddr)
+	return nil
+}
+
+func (c *Client) DiscoverLeader(peers []string) (string, error) {
+	for _, addr := range peers {
+		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Printf("Cannot connect to %s: %v", addr, err)
+			continue
+		}
+		client := pb.NewElectionServiceClient(conn)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		resp, err := client.GetLeader(ctx, &pb.EmptyRequest{})
+		cancel()
+		conn.Close()
+		if err == nil {
+			leaderID := int(resp.ID)
+			leaderAddr := fmt.Sprintf("localhost:%d", 3000+leaderID)
+			log.Printf("Discovered leader: %d at %s", leaderID, leaderAddr)
+			return leaderAddr, nil
+		}
+	}
+	return "", fmt.Errorf("cannot discover leader from any peer")
+}
+
+func (c *Client) retryWrite(fn func() (bool, error)) (bool, error) {
+	var lastErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		success, err := fn()
+		if err == nil {
+			return success, nil
+		}
+		lastErr = err
+
+		st, ok := status.FromError(err)
+		if !ok || (st.Code() != codes.Unavailable && st.Code() != codes.DeadlineExceeded) {
+			return false, err
+		}
+
+		newLeader, discErr := c.DiscoverLeader(peersList)
+		if discErr == nil && newLeader != c.leaderAddr {
+			_ = c.SwitchLeader(newLeader)
+		}
+
+		delay := baseDelay * time.Duration(attempt)
+		jitter := time.Duration(rand.Intn(100)) * time.Millisecond
+		time.Sleep(delay + jitter)
+	}
+	return false, fmt.Errorf("failed after %d retries: %w", maxRetries, lastErr)
 }
 
 func (c *Client) Get(id int32) (*User, error) {
@@ -58,36 +130,27 @@ func (c *Client) Get(id int32) (*User, error) {
 		Email:     resp.Email,
 		Password:  resp.Password,
 		Image:     resp.Image,
-		ID:        int(id),
+		ID:        int(resp.ID),
 		IsAdmin:   resp.IsAdmin,
 	}, nil
 }
 
-func (c *Client) GetAll(opts ...int32) ([]*User, error) {
-	var opt ListOptions
-	if len(opts) > 0 {
-		opt.Limit = opts[0]
-	}
-	if len(opts) == 2 {
-		opt.Offset = opts[0]
-		opt.Limit = opts[1]
-	}
-
-	resp, err := c.client.GetAll(context.Background(), &pb.GetAllRequest{Offset: opt.Offset, Limit: opt.Limit})
+func (c *Client) GetAll(offset, limit int32) ([]*User, error) {
+	resp, err := c.client.GetAll(context.Background(), &pb.GetAllRequest{Offset: offset, Limit: limit})
 	if err != nil {
 		return nil, err
 	}
-	var users []*User
-	for _, pbUser := range resp.Users {
-		users = append(users, &User{
-			CreatedAt: pbUser.CreatedAt,
-			UUID:      pbUser.UUID,
-			Email:     pbUser.Email,
-			Password:  pbUser.Password,
-			Image:     pbUser.Image,
-			ID:        int(pbUser.ID),
-			IsAdmin:   pbUser.IsAdmin,
-		})
+	users := make([]*User, len(resp.Users))
+	for i, u := range resp.Users {
+		users[i] = &User{
+			CreatedAt: u.CreatedAt,
+			UUID:      u.UUID,
+			Email:     u.Email,
+			Password:  u.Password,
+			Image:     u.Image,
+			ID:        int(u.ID),
+			IsAdmin:   u.IsAdmin,
+		}
 	}
 	return users, nil
 }
@@ -100,146 +163,69 @@ func (c *Client) Count() (int32, error) {
 	return resp.Count, nil
 }
 
-func (c *Client) Insert(user *User) (bool, error) {
-	resp, err := c.client.Insert(context.Background(), &pb.SetRequest{
-		ID: int32(user.ID),
-		Data: &pb.UserDTO{
-			CreatedAt: user.CreatedAt,
-			UUID:      user.UUID,
-			Email:     user.Email,
-			Password:  user.Password,
-			Image:     user.Image,
-			IsAdmin:   user.IsAdmin,
-		},
+func (c *Client) Insert(user *User, requestID string) (bool, error) {
+	return c.retryWrite(func() (bool, error) {
+		if requestID == "" {
+			requestID = uuid.New().String()
+			log.Printf("Generated RequestId for Insert: %s", requestID)
+		}
+		resp, err := c.client.Insert(context.Background(), &pb.SetRequest{
+			ID: int32(user.ID),
+			Data: &pb.UserDTO{
+				CreatedAt: user.CreatedAt,
+				UUID:      user.UUID,
+				Email:     user.Email,
+				Password:  user.Password,
+				Image:     user.Image,
+				IsAdmin:   user.IsAdmin,
+			},
+			RequestId: requestID,
+		})
+		if err != nil {
+			return false, err
+		}
+		return resp.Success, nil
 	})
-	if err != nil {
-		return false, err
-	}
-	return resp.Success, nil
 }
 
-func (c *Client) Set(user *User) (bool, error) {
-	resp, err := c.client.Set(context.Background(), &pb.SetRequest{
-		ID: int32(user.ID),
-		Data: &pb.UserDTO{
-			CreatedAt: user.CreatedAt,
-			UUID:      user.UUID,
-			Email:     user.Email,
-			Password:  user.Password,
-			Image:     user.Image,
-			IsAdmin:   user.IsAdmin,
-		},
+func (c *Client) Set(user *User, requestID string) (bool, error) {
+	return c.retryWrite(func() (bool, error) {
+		if requestID == "" {
+			requestID = uuid.New().String()
+			log.Printf("Generated RequestId for Set: %s", requestID)
+		}
+		resp, err := c.client.Set(context.Background(), &pb.SetRequest{
+			ID: int32(user.ID),
+			Data: &pb.UserDTO{
+				CreatedAt: user.CreatedAt,
+				UUID:      user.UUID,
+				Email:     user.Email,
+				Password:  user.Password,
+				Image:     user.Image,
+				IsAdmin:   user.IsAdmin,
+			},
+			RequestId: requestID,
+		})
+		if err != nil {
+			return false, err
+		}
+		return resp.Success, nil
 	})
-	if err != nil {
-		return false, err
-	}
-	return resp.Success, nil
 }
 
-func (c *Client) Delete(id int32) (bool, error) {
-	resp, err := c.client.Delete(context.Background(), &pb.IDRequest{ID: id})
-	if err != nil {
-		return false, err
-	}
-	return resp.Success, nil
-}
-
-func main() {
-	// Connect to the server (use "localhost:3000" for local testing)
-	client, err := NewClient("localhost:3000")
-	if err != nil {
-		log.Fatalf("Failed to connect to server: %v", err)
-	}
-	defer func() {
-		if err := client.Close(); err != nil {
-			log.Printf("Failed to close connection: %v", err)
+func (c *Client) Delete(id int32, requestID string) (bool, error) {
+	return c.retryWrite(func() (bool, error) {
+		if requestID == "" {
+			requestID = uuid.New().String()
+			log.Printf("Generated RequestId for Delete: %s", requestID)
 		}
-	}()
-
-	fmt.Println("=== Starting UserService RPC tests ===")
-	fmt.Println("Current time:", time.Now().Format(time.RFC3339))
-
-	// Test 1: Count
-	count, err := client.Count()
-	fmt.Printf("---Count users---\n")
-	if err != nil {
-		log.Printf("Count failed: %v", err)
-	} else {
-		fmt.Printf("Total users: %d\n", count)
-	}
-
-	// Test 2: GetAll
-	fmt.Printf("---Get all users---\n")
-	users, err := client.GetAll(50000)
-	if err != nil {
-		log.Printf("GetAll failed: %v", err)
-	} else {
-		totalUsers := len(users)
-		fmt.Printf("Found %d users:\n", totalUsers)
-
-		// Limit output to first 5 users for readability
-		const maxDisplay = 20
-		displayCount := min(maxDisplay, totalUsers)
-
-		for i := range displayCount {
-			u := users[i]
-			fmt.Printf("  - ID: %d | Email: %s | Admin: %v\n", u.ID, u.Email, u.IsAdmin)
+		resp, err := c.client.Delete(context.Background(), &pb.IDRequest{
+			ID:        id,
+			RequestID: requestID,
+		})
+		if err != nil {
+			return false, err
 		}
-
-		// Show remaining count if there are more users
-		remaining := totalUsers - displayCount
-		if remaining > 0 {
-			fmt.Printf("  ... (more %d users)\n", remaining)
-		}
-	}
-
-	// Test 3: Insert
-	fmt.Printf("---Insert a new user---\n")
-	newUser := &User{
-		ID:        999,
-		UUID:      "test-uuid-quang-2026",
-		Email:     "quang.test@example.com",
-		Password:  "securepass123",
-		Image:     "https://example.com/avatar.jpg",
-		CreatedAt: time.Now().Format(time.RFC3339),
-		IsAdmin:   false,
-	}
-	success, err := client.Insert(newUser)
-	if err != nil {
-		log.Printf("Insert failed: %v", err)
-	} else {
-		fmt.Printf("Insert user ID %d: %v\n", newUser.ID, success)
-	}
-
-	// Test 4: Get
-	fmt.Printf("---Get the inserted user---\n")
-	gotUser, err := client.Get(999)
-	if err != nil {
-		log.Printf("Get failed: %v", err)
-	} else {
-		fmt.Printf("Retrieved user: ID = %d, Email = %s, CreatedAt = %s\n",
-			gotUser.ID, gotUser.Email, gotUser.CreatedAt)
-	}
-
-	// Test 5: Set
-	fmt.Printf("---Update (Set) a user---\n")
-	newUser.Email = "quang.updated@example.com"
-	newUser.IsAdmin = true
-	success, err = client.Set(newUser)
-	if err != nil {
-		log.Printf("Set failed: %v", err)
-	} else {
-		fmt.Printf("Update user ID %d: %v\n", newUser.ID, success)
-	}
-
-	// Test 6: Delete
-	fmt.Printf("---Delete a user---\n")
-	success, err = client.Delete(999)
-	if err != nil {
-		log.Printf("Delete failed: %v", err)
-	} else {
-		fmt.Printf("Delete user ID %d: %v\n", 999, success)
-	}
-
-	fmt.Println("=== All tests completed ===")
+		return resp.Success, nil
+	})
 }

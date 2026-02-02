@@ -19,12 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_Get_FullMethodName    = "/user.UserService/Get"
-	UserService_GetAll_FullMethodName = "/user.UserService/GetAll"
-	UserService_Count_FullMethodName  = "/user.UserService/Count"
-	UserService_Insert_FullMethodName = "/user.UserService/Insert"
-	UserService_Set_FullMethodName    = "/user.UserService/Set"
-	UserService_Delete_FullMethodName = "/user.UserService/Delete"
+	UserService_Get_FullMethodName             = "/user.UserService/Get"
+	UserService_GetAll_FullMethodName          = "/user.UserService/GetAll"
+	UserService_Count_FullMethodName           = "/user.UserService/Count"
+	UserService_Insert_FullMethodName          = "/user.UserService/Insert"
+	UserService_Set_FullMethodName             = "/user.UserService/Set"
+	UserService_Delete_FullMethodName          = "/user.UserService/Delete"
+	UserService_ReplicateInsert_FullMethodName = "/user.UserService/ReplicateInsert"
+	UserService_ReplicateSet_FullMethodName    = "/user.UserService/ReplicateSet"
+	UserService_ReplicateDelete_FullMethodName = "/user.UserService/ReplicateDelete"
+	UserService_Ping_FullMethodName            = "/user.UserService/Ping"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -37,6 +41,10 @@ type UserServiceClient interface {
 	Insert(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Delete(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ReplicateInsert(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ReplicateSet(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ReplicateDelete(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*EmptyRequest, error)
 }
 
 type userServiceClient struct {
@@ -107,6 +115,46 @@ func (c *userServiceClient) Delete(ctx context.Context, in *IDRequest, opts ...g
 	return out, nil
 }
 
+func (c *userServiceClient) ReplicateInsert(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ReplicateInsert_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ReplicateSet(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ReplicateSet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ReplicateDelete(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ReplicateDelete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*EmptyRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyRequest)
+	err := c.cc.Invoke(ctx, UserService_Ping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -117,6 +165,10 @@ type UserServiceServer interface {
 	Insert(context.Context, *SetRequest) (*SuccessResponse, error)
 	Set(context.Context, *SetRequest) (*SuccessResponse, error)
 	Delete(context.Context, *IDRequest) (*SuccessResponse, error)
+	ReplicateInsert(context.Context, *SetRequest) (*SuccessResponse, error)
+	ReplicateSet(context.Context, *SetRequest) (*SuccessResponse, error)
+	ReplicateDelete(context.Context, *IDRequest) (*SuccessResponse, error)
+	Ping(context.Context, *EmptyRequest) (*EmptyRequest, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -144,6 +196,18 @@ func (UnimplementedUserServiceServer) Set(context.Context, *SetRequest) (*Succes
 }
 func (UnimplementedUserServiceServer) Delete(context.Context, *IDRequest) (*SuccessResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedUserServiceServer) ReplicateInsert(context.Context, *SetRequest) (*SuccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicateInsert not implemented")
+}
+func (UnimplementedUserServiceServer) ReplicateSet(context.Context, *SetRequest) (*SuccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicateSet not implemented")
+}
+func (UnimplementedUserServiceServer) ReplicateDelete(context.Context, *IDRequest) (*SuccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicateDelete not implemented")
+}
+func (UnimplementedUserServiceServer) Ping(context.Context, *EmptyRequest) (*EmptyRequest, error) {
+	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +338,78 @@ func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ReplicateInsert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReplicateInsert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReplicateInsert_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReplicateInsert(ctx, req.(*SetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ReplicateSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReplicateSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReplicateSet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReplicateSet(ctx, req.(*SetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ReplicateDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReplicateDelete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReplicateDelete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReplicateDelete(ctx, req.(*IDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Ping(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +440,200 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _UserService_Delete_Handler,
+		},
+		{
+			MethodName: "ReplicateInsert",
+			Handler:    _UserService_ReplicateInsert_Handler,
+		},
+		{
+			MethodName: "ReplicateSet",
+			Handler:    _UserService_ReplicateSet_Handler,
+		},
+		{
+			MethodName: "ReplicateDelete",
+			Handler:    _UserService_ReplicateDelete_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _UserService_Ping_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "user.proto",
+}
+
+const (
+	ElectionService_SendElection_FullMethodName    = "/user.ElectionService/SendElection"
+	ElectionService_SendCoordinator_FullMethodName = "/user.ElectionService/SendCoordinator"
+	ElectionService_GetLeader_FullMethodName       = "/user.ElectionService/GetLeader"
+)
+
+// ElectionServiceClient is the client API for ElectionService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ElectionServiceClient interface {
+	SendElection(ctx context.Context, in *ServerID, opts ...grpc.CallOption) (*EmptyRequest, error)
+	SendCoordinator(ctx context.Context, in *ServerID, opts ...grpc.CallOption) (*EmptyRequest, error)
+	GetLeader(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ServerID, error)
+}
+
+type electionServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewElectionServiceClient(cc grpc.ClientConnInterface) ElectionServiceClient {
+	return &electionServiceClient{cc}
+}
+
+func (c *electionServiceClient) SendElection(ctx context.Context, in *ServerID, opts ...grpc.CallOption) (*EmptyRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyRequest)
+	err := c.cc.Invoke(ctx, ElectionService_SendElection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *electionServiceClient) SendCoordinator(ctx context.Context, in *ServerID, opts ...grpc.CallOption) (*EmptyRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyRequest)
+	err := c.cc.Invoke(ctx, ElectionService_SendCoordinator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *electionServiceClient) GetLeader(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ServerID, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServerID)
+	err := c.cc.Invoke(ctx, ElectionService_GetLeader_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ElectionServiceServer is the server API for ElectionService service.
+// All implementations must embed UnimplementedElectionServiceServer
+// for forward compatibility.
+type ElectionServiceServer interface {
+	SendElection(context.Context, *ServerID) (*EmptyRequest, error)
+	SendCoordinator(context.Context, *ServerID) (*EmptyRequest, error)
+	GetLeader(context.Context, *EmptyRequest) (*ServerID, error)
+	mustEmbedUnimplementedElectionServiceServer()
+}
+
+// UnimplementedElectionServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedElectionServiceServer struct{}
+
+func (UnimplementedElectionServiceServer) SendElection(context.Context, *ServerID) (*EmptyRequest, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendElection not implemented")
+}
+func (UnimplementedElectionServiceServer) SendCoordinator(context.Context, *ServerID) (*EmptyRequest, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendCoordinator not implemented")
+}
+func (UnimplementedElectionServiceServer) GetLeader(context.Context, *EmptyRequest) (*ServerID, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLeader not implemented")
+}
+func (UnimplementedElectionServiceServer) mustEmbedUnimplementedElectionServiceServer() {}
+func (UnimplementedElectionServiceServer) testEmbeddedByValue()                         {}
+
+// UnsafeElectionServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ElectionServiceServer will
+// result in compilation errors.
+type UnsafeElectionServiceServer interface {
+	mustEmbedUnimplementedElectionServiceServer()
+}
+
+func RegisterElectionServiceServer(s grpc.ServiceRegistrar, srv ElectionServiceServer) {
+	// If the following call panics, it indicates UnimplementedElectionServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ElectionService_ServiceDesc, srv)
+}
+
+func _ElectionService_SendElection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ElectionServiceServer).SendElection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ElectionService_SendElection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ElectionServiceServer).SendElection(ctx, req.(*ServerID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ElectionService_SendCoordinator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ElectionServiceServer).SendCoordinator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ElectionService_SendCoordinator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ElectionServiceServer).SendCoordinator(ctx, req.(*ServerID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ElectionService_GetLeader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ElectionServiceServer).GetLeader(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ElectionService_GetLeader_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ElectionServiceServer).GetLeader(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ElectionService_ServiceDesc is the grpc.ServiceDesc for ElectionService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ElectionService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "user.ElectionService",
+	HandlerType: (*ElectionServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendElection",
+			Handler:    _ElectionService_SendElection_Handler,
+		},
+		{
+			MethodName: "SendCoordinator",
+			Handler:    _ElectionService_SendCoordinator_Handler,
+		},
+		{
+			MethodName: "GetLeader",
+			Handler:    _ElectionService_GetLeader_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

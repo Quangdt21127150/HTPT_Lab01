@@ -27,6 +27,7 @@ message EmptyRequest {}
 
 message IDRequest {
   int32 ID = 1;
+  string RequestID = 2;
 }
 
 message GetAllRequest {
@@ -44,6 +45,7 @@ message GetAllResponse {
 message SetRequest {
   int32 ID = 1;
   UserDTO data = 2;
+  string RequestId = 3;
 }
 
 message CountResponse {
@@ -54,6 +56,10 @@ message SuccessResponse {
   bool success = 1;
 }
 
+message ServerID {
+  int32 ID = 1;
+}
+
 service UserService {
   rpc Get(IDRequest) returns (User);
   rpc GetAll(GetAllRequest) returns (GetAllResponse);
@@ -61,4 +67,16 @@ service UserService {
   rpc Insert(SetRequest) returns (SuccessResponse);
   rpc Set(SetRequest) returns (SuccessResponse);
   rpc Delete(IDRequest) returns (SuccessResponse);
+
+  rpc ReplicateInsert(SetRequest) returns (SuccessResponse);
+  rpc ReplicateSet(SetRequest) returns (SuccessResponse);
+  rpc ReplicateDelete(IDRequest) returns (SuccessResponse);
+
+  rpc Ping(EmptyRequest) returns (EmptyRequest);
+}
+
+service ElectionService {
+  rpc SendElection(ServerID) returns (EmptyRequest);
+  rpc SendCoordinator(ServerID) returns (EmptyRequest);
+  rpc GetLeader(EmptyRequest) returns (ServerID);
 }

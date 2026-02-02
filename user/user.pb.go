@@ -236,6 +236,7 @@ func (*EmptyRequest) Descriptor() ([]byte, []int) {
 type IDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            int32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	RequestID     string                 `protobuf:"bytes,2,opt,name=RequestID,proto3" json:"RequestID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -275,6 +276,13 @@ func (x *IDRequest) GetID() int32 {
 		return x.ID
 	}
 	return 0
+}
+
+func (x *IDRequest) GetRequestID() string {
+	if x != nil {
+		return x.RequestID
+	}
+	return ""
 }
 
 type GetAllRequest struct {
@@ -401,6 +409,7 @@ type SetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            int32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Data          *UserDTO               `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	RequestId     string                 `protobuf:"bytes,3,opt,name=RequestId,proto3" json:"RequestId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -447,6 +456,13 @@ func (x *SetRequest) GetData() *UserDTO {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *SetRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 type CountResponse struct {
@@ -537,6 +553,50 @@ func (x *SuccessResponse) GetSuccess() bool {
 	return false
 }
 
+type ServerID struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ID            int32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ServerID) Reset() {
+	*x = ServerID{}
+	mi := &file_user_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ServerID) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServerID) ProtoMessage() {}
+
+func (x *ServerID) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServerID.ProtoReflect.Descriptor instead.
+func (*ServerID) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ServerID) GetID() int32 {
+	if x != nil {
+		return x.ID
+	}
+	return 0
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 const file_user_proto_rawDesc = "" +
@@ -558,9 +618,10 @@ const file_user_proto_rawDesc = "" +
 	"\bPassword\x18\x04 \x01(\tR\bPassword\x12\x14\n" +
 	"\x05Image\x18\x05 \x01(\tR\x05Image\x12\x18\n" +
 	"\aIsAdmin\x18\x06 \x01(\bR\aIsAdmin\"\x0e\n" +
-	"\fEmptyRequest\"\x1b\n" +
+	"\fEmptyRequest\"9\n" +
 	"\tIDRequest\x12\x0e\n" +
-	"\x02ID\x18\x01 \x01(\x05R\x02ID\"=\n" +
+	"\x02ID\x18\x01 \x01(\x05R\x02ID\x12\x1c\n" +
+	"\tRequestID\x18\x02 \x01(\tR\tRequestID\"=\n" +
 	"\rGetAllRequest\x12\x16\n" +
 	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"v\n" +
@@ -569,15 +630,18 @@ const file_user_proto_rawDesc = "" +
 	".user.UserR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x16\n" +
 	"\x06offset\x18\x03 \x01(\x05R\x06offset\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\"?\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\"]\n" +
 	"\n" +
 	"SetRequest\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\x05R\x02ID\x12!\n" +
-	"\x04data\x18\x02 \x01(\v2\r.user.UserDTOR\x04data\"%\n" +
+	"\x04data\x18\x02 \x01(\v2\r.user.UserDTOR\x04data\x12\x1c\n" +
+	"\tRequestId\x18\x03 \x01(\tR\tRequestId\"%\n" +
 	"\rCountResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"+\n" +
 	"\x0fSuccessResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xad\x02\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x1a\n" +
+	"\bServerID\x12\x0e\n" +
+	"\x02ID\x18\x01 \x01(\x05R\x02ID2\x8d\x04\n" +
 	"\vUserService\x12\"\n" +
 	"\x03Get\x12\x0f.user.IDRequest\x1a\n" +
 	".user.User\x123\n" +
@@ -585,7 +649,15 @@ const file_user_proto_rawDesc = "" +
 	"\x05Count\x12\x12.user.EmptyRequest\x1a\x13.user.CountResponse\x121\n" +
 	"\x06Insert\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x12.\n" +
 	"\x03Set\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x120\n" +
-	"\x06Delete\x12\x0f.user.IDRequest\x1a\x15.user.SuccessResponseB\bZ\x06./userb\x06proto3"
+	"\x06Delete\x12\x0f.user.IDRequest\x1a\x15.user.SuccessResponse\x12:\n" +
+	"\x0fReplicateInsert\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x127\n" +
+	"\fReplicateSet\x12\x10.user.SetRequest\x1a\x15.user.SuccessResponse\x129\n" +
+	"\x0fReplicateDelete\x12\x0f.user.IDRequest\x1a\x15.user.SuccessResponse\x12.\n" +
+	"\x04Ping\x12\x12.user.EmptyRequest\x1a\x12.user.EmptyRequest2\xad\x01\n" +
+	"\x0fElectionService\x122\n" +
+	"\fSendElection\x12\x0e.user.ServerID\x1a\x12.user.EmptyRequest\x125\n" +
+	"\x0fSendCoordinator\x12\x0e.user.ServerID\x1a\x12.user.EmptyRequest\x12/\n" +
+	"\tGetLeader\x12\x12.user.EmptyRequest\x1a\x0e.user.ServerIDB\bZ\x06./userb\x06proto3"
 
 var (
 	file_user_proto_rawDescOnce sync.Once
@@ -599,7 +671,7 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_user_proto_goTypes = []any{
 	(*User)(nil),            // 0: user.User
 	(*UserDTO)(nil),         // 1: user.UserDTO
@@ -610,27 +682,42 @@ var file_user_proto_goTypes = []any{
 	(*SetRequest)(nil),      // 6: user.SetRequest
 	(*CountResponse)(nil),   // 7: user.CountResponse
 	(*SuccessResponse)(nil), // 8: user.SuccessResponse
+	(*ServerID)(nil),        // 9: user.ServerID
 }
 var file_user_proto_depIdxs = []int32{
-	0, // 0: user.GetAllResponse.users:type_name -> user.User
-	1, // 1: user.SetRequest.data:type_name -> user.UserDTO
-	3, // 2: user.UserService.Get:input_type -> user.IDRequest
-	4, // 3: user.UserService.GetAll:input_type -> user.GetAllRequest
-	2, // 4: user.UserService.Count:input_type -> user.EmptyRequest
-	6, // 5: user.UserService.Insert:input_type -> user.SetRequest
-	6, // 6: user.UserService.Set:input_type -> user.SetRequest
-	3, // 7: user.UserService.Delete:input_type -> user.IDRequest
-	0, // 8: user.UserService.Get:output_type -> user.User
-	5, // 9: user.UserService.GetAll:output_type -> user.GetAllResponse
-	7, // 10: user.UserService.Count:output_type -> user.CountResponse
-	8, // 11: user.UserService.Insert:output_type -> user.SuccessResponse
-	8, // 12: user.UserService.Set:output_type -> user.SuccessResponse
-	8, // 13: user.UserService.Delete:output_type -> user.SuccessResponse
-	8, // [8:14] is the sub-list for method output_type
-	2, // [2:8] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: user.GetAllResponse.users:type_name -> user.User
+	1,  // 1: user.SetRequest.data:type_name -> user.UserDTO
+	3,  // 2: user.UserService.Get:input_type -> user.IDRequest
+	4,  // 3: user.UserService.GetAll:input_type -> user.GetAllRequest
+	2,  // 4: user.UserService.Count:input_type -> user.EmptyRequest
+	6,  // 5: user.UserService.Insert:input_type -> user.SetRequest
+	6,  // 6: user.UserService.Set:input_type -> user.SetRequest
+	3,  // 7: user.UserService.Delete:input_type -> user.IDRequest
+	6,  // 8: user.UserService.ReplicateInsert:input_type -> user.SetRequest
+	6,  // 9: user.UserService.ReplicateSet:input_type -> user.SetRequest
+	3,  // 10: user.UserService.ReplicateDelete:input_type -> user.IDRequest
+	2,  // 11: user.UserService.Ping:input_type -> user.EmptyRequest
+	9,  // 12: user.ElectionService.SendElection:input_type -> user.ServerID
+	9,  // 13: user.ElectionService.SendCoordinator:input_type -> user.ServerID
+	2,  // 14: user.ElectionService.GetLeader:input_type -> user.EmptyRequest
+	0,  // 15: user.UserService.Get:output_type -> user.User
+	5,  // 16: user.UserService.GetAll:output_type -> user.GetAllResponse
+	7,  // 17: user.UserService.Count:output_type -> user.CountResponse
+	8,  // 18: user.UserService.Insert:output_type -> user.SuccessResponse
+	8,  // 19: user.UserService.Set:output_type -> user.SuccessResponse
+	8,  // 20: user.UserService.Delete:output_type -> user.SuccessResponse
+	8,  // 21: user.UserService.ReplicateInsert:output_type -> user.SuccessResponse
+	8,  // 22: user.UserService.ReplicateSet:output_type -> user.SuccessResponse
+	8,  // 23: user.UserService.ReplicateDelete:output_type -> user.SuccessResponse
+	2,  // 24: user.UserService.Ping:output_type -> user.EmptyRequest
+	2,  // 25: user.ElectionService.SendElection:output_type -> user.EmptyRequest
+	2,  // 26: user.ElectionService.SendCoordinator:output_type -> user.EmptyRequest
+	9,  // 27: user.ElectionService.GetLeader:output_type -> user.ServerID
+	15, // [15:28] is the sub-list for method output_type
+	2,  // [2:15] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }
@@ -644,9 +731,9 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_user_proto_goTypes,
 		DependencyIndexes: file_user_proto_depIdxs,
