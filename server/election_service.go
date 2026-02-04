@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -14,7 +15,16 @@ import (
 
 func (s *UserServer) replicate(req any, operation string) error {
 	var wg sync.WaitGroup
+	successCount := 0
+	mu := sync.Mutex{}
 	errChan := make(chan error, len(s.config.peers)-1)
+
+	totalBackups := len(s.config.peers) - 1
+	if totalBackups == 0 {
+		return nil
+	}
+
+	majority := (totalBackups / 2) + 1
 
 	for _, pid := range s.config.peers {
 		if pid == s.config.myID {
@@ -50,19 +60,27 @@ func (s *UserServer) replicate(req any, operation string) error {
 				errChan <- rpcErr
 			} else {
 				log.Printf("%s [Server %d] [Leader] Received response from server %d for %s: SUCCESS", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, peerID, operation)
+				mu.Lock()
+				successCount++
+				mu.Unlock()
 			}
 		}(pid)
 	}
 
 	wg.Wait()
 	close(errChan)
+
 	for err := range errChan {
 		if err != nil {
-			return err
+			log.Printf("%s [Server %d] [Leader] Replication error detail: %v", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, err)
 		}
 	}
-	log.Printf("%s [Server %d] [Leader] All backups responded for %s", time.Now().Format("2006-01-02 15:04:05"), s.config.myID, operation)
-	return nil
+
+	if successCount >= majority {
+		return nil
+	}
+
+	return fmt.Errorf("replication %s just succeeded on %d/%d backups - data inconsistency among backups", operation, successCount, totalBackups)
 }
 
 func (s *UserServer) openPortForClient() {
@@ -136,7 +154,6 @@ func (s *UserServer) initiateElection() {
 		log.Printf("%s [Server %d] [Leader] No alive peer, self-elect as leader", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
 		s.setLeader(s.config.myID)
 		s.broadcastCoordinator()
-		s.openPortForClient()
 		return
 	}
 
@@ -200,10 +217,9 @@ func (s *UserServer) SendElection(ctx context.Context, req *pb.ServerID) (*pb.Su
 		s.electionTriggered = false
 		s.electionTriggeredMu.Unlock()
 
+		log.Printf("%s [Server %d] [Leader] Ring election completed, became Leader", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
 		s.setLeader(myID)
 		s.broadcastCoordinator()
-		log.Printf("%s [Server %d] [Leader] Ring election completed, became Leader", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
-		s.openPortForClient()
 		return &pb.SuccessResponse{Success: true}, nil
 	}
 
@@ -230,7 +246,7 @@ func (s *UserServer) broadcastCoordinator() {
 		}
 		client := pb.NewElectionServiceClient(conn)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		_, _ = client.SendCoordinator(ctx, &pb.ServerID{ServerID: int32(s.config.myID)})
+		client.SendCoordinator(ctx, &pb.ServerID{ServerID: int32(s.config.myID)})
 		cancel()
 		conn.Close()
 	}

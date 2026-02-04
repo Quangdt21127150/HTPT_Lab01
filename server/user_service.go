@@ -264,6 +264,7 @@ func (s *UserServer) setLeader(id int) {
 	s.isLeader = (id == s.config.myID)
 	if s.isLeader {
 		s.saveLeaderToMarker(id)
+		s.openPortForClient()
 		if s.healthCheckStop != nil {
 			close(s.healthCheckStop)
 			s.healthCheckStop = make(chan bool, 1)
@@ -456,7 +457,10 @@ func (s *UserServer) handleInsert(req *pb.SetRequest, isFromClient bool) (*pb.Su
 	}
 
 	if isFromClient {
-		go s.replicate(req, "Insert")
+		replErr := s.replicate(req, "Insert")
+		if replErr != nil {
+			log.Printf("%s [Server %d] [Leader] Replication warning: %v", now, s.config.myID, replErr)
+		}
 	}
 
 	s.markProcessed(req.RequestId)
@@ -491,7 +495,10 @@ func (s *UserServer) handleSet(req *pb.SetRequest, isFromClient bool) (*pb.Succe
 	}
 
 	if isFromClient {
-		go s.replicate(req, "Set")
+		replErr := s.replicate(req, "Set")
+		if replErr != nil {
+			log.Printf("%s [Server %d] [Leader] Replication warning: %v", now, s.config.myID, replErr)
+		}
 	}
 
 	s.markProcessed(req.RequestId)
@@ -526,7 +533,10 @@ func (s *UserServer) handleDelete(req *pb.IDRequest, isFromClient bool) (*pb.Suc
 	}
 
 	if isFromClient {
-		go s.replicate(req, "Delete")
+		replErr := s.replicate(req, "Delete")
+		if replErr != nil {
+			log.Printf("%s [Server %d] [Leader] Replication warning: %v", now, s.config.myID, replErr)
+		}
 	}
 
 	s.markProcessed(req.RequestID)
