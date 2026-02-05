@@ -11,6 +11,7 @@ import (
 	pb "github.com/marcelloh/fastdb/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
 )
 
 func (s *UserServer) replicate(req any, operation string) error {
@@ -46,12 +47,22 @@ func (s *UserServer) replicate(req any, operation string) error {
 
 			var rpcErr error
 			switch operation {
-			case "Insert":
-				_, rpcErr = client.ReplicateInsert(ctx, req.(*pb.SetRequest))
-			case "Set":
-				_, rpcErr = client.ReplicateSet(ctx, req.(*pb.SetRequest))
+			case "Insert", "Set":
+				orig, _ := req.(*pb.SetRequest)
+				reqCopy := proto.Clone(orig).(*pb.SetRequest)
+				reqCopy.IsReplicate = true
+
+				if operation == "Insert" {
+					_, rpcErr = client.Insert(ctx, reqCopy)
+				} else {
+					_, rpcErr = client.Set(ctx, reqCopy)
+				}
+
 			case "Delete":
-				_, rpcErr = client.ReplicateDelete(ctx, req.(*pb.IDRequest))
+				orig, _ := req.(*pb.IDRequest)
+				reqCopy := proto.Clone(orig).(*pb.IDRequest)
+				reqCopy.IsReplicate = true
+				_, rpcErr = client.Delete(ctx, reqCopy)
 			}
 
 			conn.Close()

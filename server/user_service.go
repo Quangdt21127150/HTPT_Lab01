@@ -429,8 +429,8 @@ func (s *UserServer) localDelete(req *pb.IDRequest) (*pb.SuccessResponse, error)
 	return &pb.SuccessResponse{Success: true}, nil
 }
 
-func (s *UserServer) handleInsert(req *pb.SetRequest, isFromClient bool) (*pb.SuccessResponse, error) {
-	if isFromClient && !s.isLeader {
+func (s *UserServer) Insert(ctx context.Context, req *pb.SetRequest) (*pb.SuccessResponse, error) {
+	if !s.isLeader && !req.IsReplicate {
 		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
 	}
 
@@ -456,7 +456,7 @@ func (s *UserServer) handleInsert(req *pb.SetRequest, isFromClient bool) (*pb.Su
 		return resp, err
 	}
 
-	if isFromClient {
+	if s.isLeader {
 		replErr := s.replicate(req, "Insert")
 		if replErr != nil {
 			log.Printf("%s [Server %d] [Leader] Replication warning: %v", now, s.config.myID, replErr)
@@ -467,8 +467,8 @@ func (s *UserServer) handleInsert(req *pb.SetRequest, isFromClient bool) (*pb.Su
 	return resp, nil
 }
 
-func (s *UserServer) handleSet(req *pb.SetRequest, isFromClient bool) (*pb.SuccessResponse, error) {
-	if isFromClient && !s.isLeader {
+func (s *UserServer) Set(ctx context.Context, req *pb.SetRequest) (*pb.SuccessResponse, error) {
+	if !s.isLeader && !req.IsReplicate {
 		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
 	}
 
@@ -494,7 +494,7 @@ func (s *UserServer) handleSet(req *pb.SetRequest, isFromClient bool) (*pb.Succe
 		return resp, err
 	}
 
-	if isFromClient {
+	if s.isLeader {
 		replErr := s.replicate(req, "Set")
 		if replErr != nil {
 			log.Printf("%s [Server %d] [Leader] Replication warning: %v", now, s.config.myID, replErr)
@@ -505,8 +505,8 @@ func (s *UserServer) handleSet(req *pb.SetRequest, isFromClient bool) (*pb.Succe
 	return resp, nil
 }
 
-func (s *UserServer) handleDelete(req *pb.IDRequest, isFromClient bool) (*pb.SuccessResponse, error) {
-	if isFromClient && !s.isLeader {
+func (s *UserServer) Delete(ctx context.Context, req *pb.IDRequest) (*pb.SuccessResponse, error) {
+	if !s.isLeader && !req.IsReplicate {
 		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
 	}
 
@@ -532,7 +532,7 @@ func (s *UserServer) handleDelete(req *pb.IDRequest, isFromClient bool) (*pb.Suc
 		return resp, err
 	}
 
-	if isFromClient {
+	if s.isLeader {
 		replErr := s.replicate(req, "Delete")
 		if replErr != nil {
 			log.Printf("%s [Server %d] [Leader] Replication warning: %v", now, s.config.myID, replErr)
@@ -541,30 +541,6 @@ func (s *UserServer) handleDelete(req *pb.IDRequest, isFromClient bool) (*pb.Suc
 
 	s.markProcessed(req.RequestID)
 	return resp, nil
-}
-
-func (s *UserServer) Insert(ctx context.Context, req *pb.SetRequest) (*pb.SuccessResponse, error) {
-	return s.handleInsert(req, true)
-}
-
-func (s *UserServer) ReplicateInsert(ctx context.Context, req *pb.SetRequest) (*pb.SuccessResponse, error) {
-	return s.handleInsert(req, false)
-}
-
-func (s *UserServer) Set(ctx context.Context, req *pb.SetRequest) (*pb.SuccessResponse, error) {
-	return s.handleSet(req, true)
-}
-
-func (s *UserServer) ReplicateSet(ctx context.Context, req *pb.SetRequest) (*pb.SuccessResponse, error) {
-	return s.handleSet(req, false)
-}
-
-func (s *UserServer) Delete(ctx context.Context, req *pb.IDRequest) (*pb.SuccessResponse, error) {
-	return s.handleDelete(req, true)
-}
-
-func (s *UserServer) ReplicateDelete(ctx context.Context, req *pb.IDRequest) (*pb.SuccessResponse, error) {
-	return s.handleDelete(req, false)
 }
 
 func (s *UserServer) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, error) {
