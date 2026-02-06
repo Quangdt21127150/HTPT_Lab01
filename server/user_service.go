@@ -544,11 +544,13 @@ func (s *UserServer) Delete(ctx context.Context, req *pb.IDRequest) (*pb.Success
 }
 
 func (s *UserServer) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, error) {
-	if !s.isLeader {
-		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
+	now := time.Now().Format("2006-01-02 15:04:05")
+	role := "Backup"
+	if s.isLeader {
+		role = "Leader"
 	}
 
-	log.Printf("%s [Server %d] [Leader] Received Get request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
+	log.Printf("%s [Server %d] [%s] Received GetAll request from Client", now, s.config.myID, role)
 
 	data, ok := s.config.db.Get(bucket, int(req.ID))
 	if !ok {
@@ -572,11 +574,13 @@ func (s *UserServer) Get(ctx context.Context, req *pb.IDRequest) (*pb.User, erro
 }
 
 func (s *UserServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.GetAllResponse, error) {
-	if !s.isLeader {
-		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
+	now := time.Now().Format("2006-01-02 15:04:05")
+	role := "Backup"
+	if s.isLeader {
+		role = "Leader"
 	}
 
-	log.Printf("%s [Server %d] [Leader] Received GetAll request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
+	log.Printf("%s [Server %d] [%s] Received GetAll request from Client", now, s.config.myID, role)
 
 	allData, err := s.config.db.GetAll(bucket)
 	if err != nil {
@@ -643,11 +647,13 @@ func (s *UserServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.Get
 }
 
 func (s *UserServer) Count(ctx context.Context, req *pb.EmptyRequest) (*pb.CountResponse, error) {
-	if !s.isLeader {
-		return nil, status.Error(codes.Unavailable, "Cannot connect to this server")
+	now := time.Now().Format("2006-01-02 15:04:05")
+	role := "Backup"
+	if s.isLeader {
+		role = "Leader"
 	}
 
-	log.Printf("%s [Server %d] [Leader] Received Count request from Client", time.Now().Format("2006-01-02 15:04:05"), s.config.myID)
+	log.Printf("%s [Server %d] [%s] Received Count request from Client", now, s.config.myID, role)
 
 	all, err := s.config.db.GetAll(bucket)
 	if err != nil {
